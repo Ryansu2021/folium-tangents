@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>笛卡兒葉形線的切線 · 法圓法 vs 擬等法</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f1e9d8; --paper-2:#f8f2e4; --panel:#fbf6ea;
+    --ink:#2b2418; --ink-soft:#6b5f49; --line:#d8ccb0;
+    --cinnabar:#b23320; --cinnabar-2:#d2553b;
+    --slate:#5d6b6f; --gold:#a8842c; --teal:#1f6f6b;
+    --grid:rgba(43,36,24,.10); --grid-axis:rgba(43,36,24,.42);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(120% 80% at 12% 0%, #f6efdf 0%, transparent 55%),
+      radial-gradient(120% 90% at 100% 100%, #ece2cd 0%, transparent 50%),
+      var(--paper);
+    color:var(--ink); font-family:"Noto Serif TC",serif; line-height:1.6;
+    height:100vh; overflow:hidden;
+  }
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/></svg>");}
+  .wrap{position:relative;z-index:1;height:100vh;max-width:1560px;margin:0 auto;
+    display:flex;flex-direction:column;padding:clamp(8px,1.4vw,16px);gap:7px;}
+
+  header{text-align:center;flex:none;}
+  .kicker{font-family:"Fraunces",serif;font-style:italic;letter-spacing:.18em;text-transform:uppercase;
+    font-size:clamp(9px,1.3vw,11.5px);color:var(--cinnabar);margin-bottom:.2em;}
+  h1{font-weight:700;font-size:clamp(18px,3vw,30px);letter-spacing:.04em;line-height:1.1;}
+  .eq-head{font-family:"Fraunces",serif;font-size:clamp(12px,1.9vw,16px);margin-top:.25em;color:var(--ink-soft);font-style:italic;}
+  .eq-head b{color:var(--cinnabar);font-weight:600;}
+  .rule{height:1px;background:linear-gradient(90deg,transparent,var(--line) 18%,var(--line) 82%,transparent);margin:3px 0;flex:none;}
+
+  /* 全域 a 控制 */
+  .abar{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);
+    border-radius:6px;padding:7px 16px;flex:none;box-shadow:0 1px 0 #fff inset;}
+  .abar .lab{font-family:"Fraunces",serif;font-style:italic;font-size:15px;color:var(--ink-soft);white-space:nowrap;}
+  .abar .val{font-family:"Fraunces",serif;font-weight:600;font-size:22px;min-width:62px;text-align:center;}
+  .abar input[type=range]{flex:1;}
+  .abar .note{font-size:12px;color:var(--cinnabar);min-width:0;}
+
+  /* 分頁 */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;flex:none;}
+  .tabs button{flex:1;min-width:150px;border:1px solid var(--line);background:var(--paper-2);
+    font-family:"Noto Serif TC",serif;font-size:14px;color:var(--ink-soft);padding:8px 8px;border-radius:6px;
+    cursor:pointer;transition:.16s;font-weight:600;}
+  .tabs button .en{display:block;font-family:"Fraunces",serif;font-style:italic;font-size:11px;font-weight:400;
+    letter-spacing:.08em;margin-top:2px;opacity:.7;}
+  .tabs button.on{background:var(--ink);color:var(--paper-2);border-color:var(--ink);}
+
+  .layout{flex:1;min-height:0;display:grid;grid-template-columns:1fr clamp(316px,29%,400px);
+    grid-template-rows:minmax(0,1fr);
+    gap:clamp(10px,1.5vw,18px);align-items:stretch;margin-top:4px;}
+  @media(max-width:900px){ .layout{grid-template-columns:1fr;grid-template-rows:auto;} }
+
+  .plate{background:var(--paper-2);border:1px solid var(--line);border-radius:6px;padding:10px;position:relative;
+    box-shadow:0 1px 0 #fff inset,0 18px 40px -28px rgba(43,36,24,.55);
+    display:flex;align-items:center;justify-content:center;min-height:0;min-width:0;overflow:hidden;}
+  .plate::after{content:"";position:absolute;inset:5px;border:1px solid rgba(168,132,44,.28);border-radius:4px;pointer-events:none;}
+  canvas{display:block;border-radius:3px;touch-action:none;cursor:crosshair;}
+  .hint{position:absolute;left:14px;bottom:14px;font-family:"Fraunces",serif;font-style:italic;font-size:11.5px;
+    color:var(--ink-soft);background:rgba(248,242,228,.82);padding:3px 9px;border-radius:20px;border:1px solid var(--line);}
+
+  .panel{display:flex;flex-direction:column;gap:11px;min-height:0;overflow-y:auto;padding-right:4px;}
+  .panel::-webkit-scrollbar{width:8px;}
+  .panel::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:15px 15px 17px;box-shadow:0 1px 0 #fff inset;}
+  .card h2{font-family:"Fraunces",serif;font-style:italic;font-weight:500;font-size:12.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--cinnabar);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .card h2::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;cursor:pointer;}
+  input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:3px;background:linear-gradient(90deg,var(--cinnabar),var(--gold));}
+  input[type=range]::-moz-range-track{height:4px;border-radius:3px;background:linear-gradient(90deg,var(--cinnabar),var(--gold));}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:21px;height:21px;border-radius:50%;
+    background:var(--paper-2);border:2px solid var(--cinnabar);margin-top:-8.5px;box-shadow:0 2px 6px rgba(43,36,24,.3);}
+  input[type=range]::-moz-range-thumb{width:21px;height:21px;border-radius:50%;background:var(--paper-2);
+    border:2px solid var(--cinnabar);box-shadow:0 2px 6px rgba(43,36,24,.3);}
+  .ticks{display:flex;justify-content:space-between;font-family:"Fraunces",serif;font-size:11px;color:var(--ink-soft);margin-top:1px;}
+
+  .readout{display:flex;flex-direction:column;gap:8px;font-size:14px;}
+  .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding-bottom:7px;border-bottom:1px dotted var(--line);}
+  .row:last-child{border-bottom:0;padding-bottom:0;}
+  .row .k{color:var(--ink-soft);}
+  .row .v{font-family:"Fraunces",serif;font-weight:500;text-align:right;}
+  .c-cin{color:var(--cinnabar);} .c-slate{color:var(--slate);} .c-gold{color:var(--gold);} .c-teal{color:var(--teal);}
+
+  .status{margin-top:12px;padding:10px 12px;border-radius:6px;text-align:center;font-weight:600;font-size:14px;border:1px solid;}
+  .status.ok{background:rgba(31,111,107,.10);color:var(--teal);border-color:rgba(31,111,107,.4);}
+  .status.no{background:rgba(93,107,111,.08);color:var(--slate);border-color:rgba(93,107,111,.3);}
+
+  .toggles{display:flex;flex-direction:column;gap:10px;}
+  .tg{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;}
+  .tg .dot{width:11px;height:11px;border-radius:50%;display:inline-block;margin-right:8px;vertical-align:-1px;}
+  .switch{position:relative;width:40px;height:22px;flex:none;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider-sw{position:absolute;inset:0;background:#d9ccae;border-radius:22px;transition:.18s;}
+  .slider-sw::before{content:"";position:absolute;height:16px;width:16px;left:3px;top:3px;background:var(--paper-2);
+    border-radius:50%;transition:.18s;box-shadow:0 1px 3px rgba(0,0,0,.25);}
+  .switch input:checked + .slider-sw{background:var(--teal);}
+  .switch input:checked + .slider-sw::before{transform:translateX(18px);}
+
+  .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  .seg button{flex:1;border:0;background:transparent;padding:8px 4px;cursor:pointer;font-family:"Noto Serif TC",serif;
+    font-size:13px;color:var(--ink-soft);transition:.15s;}
+  .seg button.on{background:var(--ink);color:var(--paper-2);}
+
+  .btnrow{display:flex;gap:9px;margin-top:4px;}
+  .btn{flex:1;border:1px solid var(--cinnabar);background:transparent;color:var(--cinnabar);font-family:"Noto Serif TC",serif;
+    font-size:14px;padding:9px;border-radius:6px;cursor:pointer;transition:.15s;}
+  .btn:hover{background:var(--cinnabar);color:var(--paper-2);}
+  .btn.ghost{border-color:var(--line);color:var(--ink-soft);}
+  .btn.ghost:hover{background:var(--ink);color:var(--paper-2);border-color:var(--ink);}
+
+  .hidden{display:none !important;}
+
+  /* 理論卡 */
+  .theory{background:var(--panel);border:1px solid var(--line);border-radius:6px;flex:none;
+    padding:clamp(13px,1.5vw,18px);box-shadow:0 1px 0 #fff inset;}
+  .theory h3{font-family:"Noto Serif TC",serif;font-weight:700;font-size:18px;margin-bottom:4px;
+    display:flex;align-items:baseline;gap:10px;}
+  .theory h3 .en{font-family:"Fraunces",serif;font-style:italic;font-weight:400;font-size:13px;color:var(--cinnabar);}
+  .theory h4{font-weight:700;font-size:15px;margin:18px 0 6px;color:var(--ink);}
+  .theory p{font-size:14.5px;margin:6px 0;text-align:justify;}
+  .theory ol,.theory ul{margin:6px 0 6px 1.3em;font-size:14.5px;}
+  .theory li{margin:4px 0;}
+  .theory .src{font-size:12px;color:var(--ink-soft);font-style:italic;}
+  .mathbox{background:var(--paper-2);border:1px solid var(--line);border-left:3px solid var(--cinnabar);
+    border-radius:4px;padding:12px 16px;margin:12px 0;font-size:15.5px;overflow-x:auto;text-align:center;}
+  .step{background:var(--paper-2);border:1px solid var(--line);border-radius:4px;padding:8px 14px;margin:8px 0;
+    font-size:14.5px;display:flex;gap:12px;align-items:baseline;}
+  .step .n{font-family:"Fraunces",serif;font-weight:600;color:var(--cinnabar);flex:none;}
+  .mq{font-family:"Fraunces","Noto Serif TC",serif;font-style:italic;}
+  sup{font-size:.72em;}
+  .frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;font-size:.92em;line-height:1.05;margin:0 .12em;}
+  .frac .nu{border-bottom:1.4px solid currentColor;padding:0 .35em;}
+  .frac .de{padding:0 .35em;}
+  .adeq{font-size:1.15em;padding:0 .12em;}
+
+  footer{text-align:center;color:var(--ink-soft);font-size:11px;font-style:italic;font-family:"Fraunces",serif;margin-top:5px;letter-spacing:.06em;flex:none;}
+
+  /* 窄螢幕（直式平板／手機）：改為堆疊並允許頁面捲動 */
+  @media(max-width:900px){
+    html,body{height:auto;overflow:auto;}
+    .wrap{height:auto;display:block;}
+    .abar,.tabs{margin-bottom:10px;}
+    .panel{overflow:visible;min-height:auto;}
+    h1{font-size:clamp(22px,5vw,30px);}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Folium of Descartes · Tangent Lines · 1638</div>
+    <h1>笛卡兒葉形線的切線</h1>
+    <div class="eq-head">x³ + y³ = 3<b>a</b>xy　·　笛卡兒法圓法 ⟷ 費馬擬等法</div>
+  </header>
+  <div class="rule"></div>
+
+  <!-- 全域 a -->
+  <div class="abar">
+    <span class="lab">a =</span>
+    <span class="val" id="aVal">1.00</span>
+    <input type="range" id="aSlider" min="-3" max="3" step="0.05" value="1">
+    <span class="note" id="aNote"></span>
+  </div>
+
+  <!-- 分頁 -->
+  <div class="tabs">
+    <button data-tab="curve" class="on">① 認識曲線與切線<span class="en">The Curve &amp; Tangent</span></button>
+    <button data-tab="desc">② 笛卡兒 · 法圓法<span class="en">Method of Normals</span></button>
+    <button data-tab="fermat">③ 費馬 · 擬等法<span class="en">Adequality</span></button>
+  </div>
+
+  <div class="layout">
+    <div class="plate">
+      <canvas id="cv"></canvas>
+      <div class="hint" id="hint">拖曳圖上的點操作</div>
+    </div>
+
+    <div class="panel">
+      <!-- ① 曲線控制 -->
+      <div class="ctrl" id="ctrl-curve">
+        <div class="card">
+          <h2>任意點切線</h2>
+          <label class="tg" style="margin-bottom:10px;"><span><span class="dot" style="background:var(--cinnabar)"></span>顯示切線（可拖曳點）</span>
+            <span class="switch"><input type="checkbox" id="tTan" checked><span class="slider-sw"></span></span></label>
+          <input type="range" id="phiC" min="0.03" max="1.53" step="0.005" value="0.785">
+          <div class="ticks"><span>原點</span><span>頂點</span><span>原點</span></div>
+          <div class="readout" style="margin-top:12px;">
+            <div class="row"><span class="k">切點 (x₀, y₀)</span><span class="v c-cin" id="cP">(1.50, 1.50)</span></div>
+            <div class="row"><span class="k">斜率 dy/dx</span><span class="v c-gold" id="cM">−1.00</span></div>
+            <div class="row"><span class="k">切線方程</span><span class="v" id="cEq">y = −x + 3</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>顯示選項</h2>
+          <div class="toggles">
+            <label class="tg"><span><span class="dot" style="background:var(--slate)"></span>漸近線 x+y+a=0</span>
+              <span class="switch"><input type="checkbox" id="tAsym" checked><span class="slider-sw"></span></span></label>
+            <label class="tg"><span><span class="dot" style="background:var(--gold)"></span>頂點與節點</span>
+              <span class="switch"><input type="checkbox" id="tMark" checked><span class="slider-sw"></span></span></label>
+            <label class="tg"><span><span class="dot" style="background:var(--grid-axis)"></span>座標格線</span>
+              <span class="switch"><input type="checkbox" id="tGrid" checked><span class="slider-sw"></span></span></label>
+          </div>
+          <div style="margin-top:13px;font-size:13px;color:var(--ink-soft);margin-bottom:6px;">縮放模式</div>
+          <div class="seg" id="segScale">
+            <button data-mode="fixed" class="on">固定比例</button>
+            <button data-mode="auto">自動縮放</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ② 法圓法控制 -->
+      <div class="ctrl hidden" id="ctrl-desc">
+        <div class="card">
+          <h2>圓心位置 v</h2>
+          <p style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">
+            圓心固定在 x 軸上 (v, 0)，半徑使圓通過頂點 P。拖曳改變 v，找出圓與葉圈「相切（重根）」的位置。</p>
+          <input type="range" id="descV" min="-2.5" max="4" step="0.02" value="1.5">
+          <div class="ticks"><span>−2.5</span><span>0</span><span>4</span></div>
+          <div class="status no" id="descStatus">割線：圓穿過曲線（兩交點）</div>
+          <div class="readout" style="margin-top:12px;">
+            <div class="row"><span class="k">頂點 P</span><span class="v c-cin" id="dP">(1.50, 1.50)</span></div>
+            <div class="row"><span class="k">半徑斜率 (P→圓心反向)</span><span class="v c-gold" id="dRs">1.00</span></div>
+            <div class="row"><span class="k">相切條件（半徑⟂切線）</span><span class="v" id="dCond">需斜率 = +1</span></div>
+            <div class="row"><span class="k">所得切線</span><span class="v c-cin" id="dTan">—</span></div>
+          </div>
+          <div class="btnrow" style="margin-top:14px;">
+            <button class="btn" id="dSolve">▶ 求解（v → 0）</button>
+            <button class="btn ghost" id="dReset">重設</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ③ 擬等法控制 -->
+      <div class="ctrl hidden" id="ctrl-fermat">
+        <div class="card">
+          <h2>切點 P = (x, f(x))</h2>
+          <input type="range" id="phiF" min="0.18" max="1.45" step="0.005" value="1.1">
+          <div class="ticks"><span>原點</span><span>頂點</span><span>原點</span></div>
+          <label class="tg" style="margin:12px 0 4px;"><span>顯示副切線三角形 △TAP</span>
+            <span class="switch"><input type="checkbox" id="tSub" checked><span class="slider-sw"></span></span></label>
+        </div>
+        <div class="card">
+          <h2>鄰點間距 e</h2>
+          <p style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;">
+            取鄰點 P′，當 e → 0 時割線 PP′ 趨近切線。</p>
+          <input type="range" id="fermH" min="-2.4" max="0" step="0.02" value="-0.5">
+          <div class="ticks"><span>e 大</span><span>e → 0</span></div>
+          <div class="readout" style="margin-top:12px;">
+            <div class="row"><span class="k">間距 e = Δx</span><span class="v" id="fE">—</span></div>
+            <div class="row"><span class="k">割線斜率 Δy/Δx</span><span class="v c-teal" id="fSec">—</span></div>
+            <div class="row"><span class="k">切線斜率 f′(x)</span><span class="v c-cin" id="fTan">—</span></div>
+            <div class="row"><span class="k">副切線 t = f(x)/f′(x)</span><span class="v c-gold" id="fSub">—</span></div>
+          </div>
+          <div class="btnrow" style="margin-top:14px;">
+            <button class="btn" id="fSolve">▶ 演示 e → 0</button>
+            <button class="btn ghost" id="fReset">重設</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 理論：① -->
+      <div class="theory" id="theory-curve">
+    <h3>笛卡兒葉形線：曲線本身 <span class="en">The Curve Itself</span></h3>
+    <p>方程式 <span class="mq">x³ + y³ = 3axy</span>（<b>a</b> 為非零常數）。此曲線有三項特徵：第一象限形成一個封閉的<b>葉圈</b>（loop）；沿兩個方向延伸至無窮，趨近<b>漸近線</b> <span class="mq">x + y + a = 0</span>；通過原點，而<b>原點是節點</b>（曲線在此自我相交）。它<b>不是函數</b>（y 並非 x 的單值函數），無法直接寫成 y = f(x) — 這正是笛卡兒選它作為「刁難工具」向費馬挑戰的原因。</p>
+    <div class="mathbox">參數式　<span class="mq">x = <span class="frac"><span class="nu">3at</span><span class="de">1+t³</span></span>，　y = <span class="frac"><span class="nu">3at²</span><span class="de">1+t³</span></span></span>，其中 t = y/x</div>
+    <h4>任意點的切線方程</h4>
+    <p>對 <span class="mq">x³+y³=3axy</span> 隱函數微分可得斜率，於是過點 (x₀, y₀) 的切線為：</p>
+    <div class="mathbox"><span class="mq">y − y₀ = <span class="frac"><span class="nu">a y₀ − x₀²</span><span class="de">y₀² − a x₀</span></span> (x − x₀)</span></div>
+    <p><b>範例（a = 1，點 (3/2, 3/2)）：</b>先驗證在曲線上：(3/2)³+(3/2)³ = 27/4 = 3·1·(3/2)·(3/2) ✓。斜率 = <span class="frac"><span class="nu">3/2 − 9/4</span><span class="de">9/4 − 3/2</span></span> = <span class="frac"><span class="nu">−3/4</span><span class="de">3/4</span></span> = −1，故切線 <span class="mq">y = −x + 3</span>。</p>
+  </div>
+
+  <!-- 理論：② -->
+  <div class="theory hidden" id="theory-desc">
+    <h3>笛卡兒的方法：法圓法 <span class="en">Method of Normals · 《幾何學》</span></h3>
+    <p><b>核心思想：</b>圓的半徑恆垂直於圓上的切線。因此，若能找到一個與曲線在某點<b>恰好相切</b>（只有一個交點、即重根）的圓，那麼從圓心到切點的半徑方向，就是曲線在該點的<b>法線</b>方向；取其垂直方向即為切線。</p>
+    <h4>操作步驟（以一般曲線 y = f(x) 為例）</h4>
+    <div class="step"><span class="n">1</span><span>設圓心在 x 軸上，座標 <span class="mq">(v, 0)</span>（笛卡兒常設圓心在座標軸上以簡化計算）。</span></div>
+    <div class="step"><span class="n">2</span><span>圓方程 <span class="mq">(x − v)² + y² = R²</span>。</span></div>
+    <div class="step"><span class="n">3</span><span>將曲線方程代入，得到一個僅含 x 的多項式方程。</span></div>
+    <div class="step"><span class="n">4</span><span>要求圓與曲線在 P 點切觸（相切），即此多項式有<b>重根</b> <span class="mq">x = b</span>。</span></div>
+    <div class="step"><span class="n">5</span><span>利用重根條件（可被 <span class="mq">(x − b)²</span> 整除）解出 v。</span></div>
+    <div class="step"><span class="n">6</span><span>法線斜率 = <span class="frac"><span class="nu">f(b) − 0</span><span class="de">b − v</span></span>，切線斜率為其<b>負倒數</b>。</span></div>
+    <h4>侷限</h4>
+    <p>這個方法在曲線可寫成 <span class="mq">y = f(x)</span> 時運作尚可，但對於隱式方程 F(x,y)=0 的曲線 — 如葉形線 <span class="mq">x³+y³=3axy</span> — 代入圓方程後會產生極高次的多項式，重根條件非常難以利用。笛卡兒自己承認，他的方法只能在葉形線的<b>頂點</b>（<span class="mq">x = y</span> 對稱點）這個特殊點上奏效，無法推廣到一般任意點。<span class="src">這就是他自以為可以難倒費馬的原因。</span></p>
+    <h4>頂點處的求解（本頁互動）</h4>
+    <p>頂點 <span class="mq">P = (3a/2, 3a/2)</span> 的法線正是對稱軸 <span class="mq">y = x</span>，它通過原點，故圓心取在原點 <span class="mq">(0,0)</span>，半徑 <span class="mq">R² = 9a²/2</span>。此圓恰在頂點與葉圈相切（葉圈最遠點），半徑斜率 = +1，垂直得切線斜率 −1，即 <span class="mq">y = −x + 3a</span>。</p>
+  </div>
+
+  <!-- 理論：③ -->
+  <div class="theory hidden" id="theory-fermat">
+    <h3>費馬的方法：擬等法求切線 <span class="en">Method of Adequality · ~1636</span></h3>
+    <p>費馬約於 1636 年完成小論文《求極大極小值的方法》（<i>Methodus ad disquirendam maximam et minimam</i>），其中不僅求極值，也發展出一套求切線的技術。</p>
+    <p><b>核心洞見：</b>切線是割線的<b>極限</b>情形。在點 <span class="mq">P = (x, f(x))</span> 附近取另一點 <span class="mq">P′ = (x+e, f(x+e))</span>，當 <span class="mq">e → 0</span> 時，割線 PP′ 趨近於切線。費馬使用「<b>副切線</b>」（subtangent）<span class="mq">t</span> 作為媒介：由切點 P 向 x 軸作垂線得垂足 A，切線交 x 軸於 T，線段 <span class="mq">TA</span> 即副切線，長度為 t。</p>
+    <h4>擬等法求副切線</h4>
+    <p>在小三角形 △TAP 與移位後的 △TA′P′ 之間，費馬建立「擬等式」（兩鄰點切線斜率設為近似相等）：</p>
+    <div class="mathbox"><span class="mq"><span class="frac"><span class="nu">f(x)</span><span class="de">t</span></span> <span class="adeq">≍</span> <span class="frac"><span class="nu">f(x+e)</span><span class="de">t+e</span></span></span></div>
+    <div class="step"><span class="n">交叉相乘</span><span class="mq">f(x)·(t+e) ≍ f(x+e)·t　⟹　f(x)t + f(x)e ≍ f(x+e)t</span></div>
+    <div class="step"><span class="n">消去 f(x)t、除以 e</span><span class="mq">f(x) ≍ <span class="frac"><span class="nu">f(x+e) − f(x)</span><span class="de">e</span></span> · t</span></div>
+    <div class="step"><span class="n">令 e → 0</span><span>（費馬稱「去掉 e」，令含 e 的項消失）</span></div>
+    <div class="mathbox"><span class="mq">t = <span class="frac"><span class="nu">f(x)</span><span class="de">f′(x)</span></span></span></div>
+    <p>這正是微積分中的<b>副切線公式</b>。費馬在不自知的情況下，已經算出了導數 <span class="mq">f′(x)</span>。</p>
+    <h4>對葉形線（隱函數微分 — 擬等法的精確等效）</h4>
+    <p>對 <span class="mq">x³+y³=3axy</span> 兩邊對 x 微分：</p>
+    <div class="mathbox"><span class="mq">3x² + 3y²<span class="frac"><span class="nu">dy</span><span class="de">dx</span></span> = 3a(y + x<span class="frac"><span class="nu">dy</span><span class="de">dx</span></span>)</span></div>
+    <div class="mathbox"><span class="mq">(3y² − 3ax)<span class="frac"><span class="nu">dy</span><span class="de">dx</span></span> = 3ay − 3x²　⟹　<span class="frac"><span class="nu">dy</span><span class="de">dx</span></span> = <span class="frac"><span class="nu">ay − x²</span><span class="de">y² − ax</span></span></span></div>
+  </div>
+    </div>
+  </div>
+
+  <footer>互動式 HPM 教學工具 · 拖曳圖形或拉桿操作 · x³+y³=3axy</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+  const css=getComputedStyle(document.documentElement), C=n=>css.getPropertyValue(n).trim();
+  const $=id=>document.getElementById(id);
+
+  // 狀態
+  let a=1, mode='curve', scaleMode='fixed';
+  let show={asym:true,mark:true,grid:true};
+  let dpr=1,size=600,cx=0,cy=0,unit=1,R=5.5;
+  // 各分頁狀態
+  let curveTan=true, phiC=0.785;
+  let descV=1.5, descAnim=false, descT0=0, descStartV=1.5;
+  let phiF=1.1, fermLogH=-0.5, fermSub=true, fermAnim=false;
+  let raf=null;
+
+  // 數學
+  function pt(t){const d=1+t*t*t;return [3*a*t/d,3*a*t*t/d];}
+  function slopeT(t){const den=1-2*t*t*t; const num=t*(2-t*t*t); return num/den;}
+  function W2S(x,y){return [cx+x*unit, cy-y*unit];}
+  function S2W(sx,sy){return [(sx-cx)/unit,(cy-sy)/unit];}
+
+  // 繪圖基元
+  function dot(p,r){const[sx,sy]=W2S(p[0],p[1]);ctx.beginPath();ctx.arc(sx,sy,r,0,7);ctx.fill();}
+  function ring(p,r){const[sx,sy]=W2S(p[0],p[1]);ctx.beginPath();ctx.arc(sx,sy,r,0,7);ctx.stroke();}
+  function line(p,q){const A=W2S(p[0],p[1]),B=W2S(q[0],q[1]);ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.stroke();}
+  function tri(p,q,r){const A=W2S(p[0],p[1]),B=W2S(q[0],q[1]),D=W2S(r[0],r[1]);ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineTo(D[0],D[1]);ctx.closePath();ctx.fill();}
+  function lineSlope(x0,y0,m){ if(!isFinite(m)||Math.abs(m)>1e4){line([x0,-R],[x0,R]);return;} line([-R,y0+m*(-R-x0)],[R,y0+m*(R-x0)]); }
+
+  // 尺寸 / DPI
+  function resize(){
+    const rect=cv.parentElement.getBoundingClientRect();
+    const availW=rect.width-20, availH=rect.height-20;
+    const narrow=window.matchMedia('(max-width:900px)').matches;
+    size=narrow ? Math.max(240,Math.floor(availW))
+                : Math.max(240,Math.floor(Math.min(availW,availH)));
+    dpr=Math.min(window.devicePixelRatio||1,2.5);
+    cv.style.width=size+'px'; cv.style.height=size+'px';
+    cv.width=Math.floor(size*dpr); cv.height=Math.floor(size*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0); draw();
+  }
+  function niceStep(range){const raw=range/5,p=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/p;
+    let s; if(f<1.5)s=1;else if(f<3.5)s=2;else if(f<7.5)s=5;else s=10; return s*p;}
+  function computeView(){
+    cx=size/2; cy=size/2;
+    if(mode==='curve') R=(scaleMode==='auto')?2.5*Math.max(0.18,Math.abs(a)):5.5;
+    else R=Math.max(4.5,3.4*Math.abs(a));
+    unit=(size/2-14)/R;
+  }
+
+  // 主繪
+  function draw(){
+    computeView();
+    ctx.clearRect(0,0,size,size);
+    ctx.fillStyle=C('--paper-2'); ctx.fillRect(0,0,size,size);
+    ctx.save(); ctx.beginPath(); ctx.rect(2,2,size-4,size-4); ctx.clip();
+
+    const showGrid = (mode==='curve')? show.grid : true;
+    if(showGrid) drawGrid();
+    drawAxes();
+    const showAsym = (mode==='curve')? show.asym : true;
+    if(showAsym && a!==0) drawAsymptote();
+
+    if(a===0){ ctx.fillStyle=C('--cinnabar'); dot([0,0],4); ctx.restore(); updateReadout(); return; }
+
+    drawCurveCore();
+
+    if(mode==='curve') drawCurveExtras();
+    else if(mode==='desc') drawDesc();
+    else drawFermat();
+
+    ctx.restore();
+    updateReadout();
+  }
+
+  function drawGrid(){
+    const step=niceStep(R); ctx.lineWidth=1; ctx.strokeStyle=C('--grid'); ctx.beginPath();
+    const lim=Math.ceil(R/step)*step;
+    for(let v=-lim;v<=lim+1e-9;v+=step){ if(Math.abs(v)<step*0.4)continue;
+      let A=W2S(v,-lim),B=W2S(v,lim); ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);
+      let D=W2S(-lim,v),E=W2S(lim,v); ctx.moveTo(D[0],D[1]);ctx.lineTo(E[0],E[1]); }
+    ctx.stroke();
+  }
+  function drawAxes(){
+    const step=niceStep(R); ctx.strokeStyle=C('--grid-axis'); ctx.lineWidth=1.4; ctx.beginPath();
+    let A=W2S(-R,0),B=W2S(R,0); ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);
+    let D=W2S(0,-R),E=W2S(0,R); ctx.moveTo(D[0],D[1]);ctx.lineTo(E[0],E[1]); ctx.stroke();
+    ctx.fillStyle=C('--ink-soft'); ctx.font='11px Fraunces, serif';
+    const lim=Math.ceil(R/step)*step;
+    ctx.textAlign='center';ctx.textBaseline='top';
+    for(let v=-lim;v<=lim+1e-9;v+=step){if(Math.abs(v)<step*0.4)continue;let s=W2S(v,0);if(s[0]>10&&s[0]<size-10)ctx.fillText(ftk(v),s[0],s[1]+4);}
+    ctx.textAlign='left';ctx.textBaseline='middle';
+    for(let v=-lim;v<=lim+1e-9;v+=step){if(Math.abs(v)<step*0.4)continue;let s=W2S(0,v);if(s[1]>8&&s[1]<size-8)ctx.fillText(ftk(v),s[0]+5,s[1]);}
+    ctx.textAlign='right';ctx.textBaseline='top';let o=W2S(0,0);ctx.fillText('O',o[0]-4,o[1]+4);
+  }
+  function ftk(v){return (Math.round(v*100)/100).toString();}
+
+  function drawAsymptote(){
+    ctx.save(); ctx.setLineDash([7,6]); ctx.lineWidth=1.6; ctx.strokeStyle=C('--slate');
+    line([-R,-a+R],[R,-a-R]); ctx.restore();
+  }
+
+  function strokePoly(pts,color,w){
+    ctx.strokeStyle=color;ctx.lineWidth=w;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
+    let started=false; const big=R*40;
+    for(let i=0;i<pts.length;i++){const[x,y]=pts[i];
+      if(!isFinite(x)||!isFinite(y)||Math.abs(x)>big||Math.abs(y)>big){started=false;continue;}
+      const[sx,sy]=W2S(x,y); if(!started){ctx.moveTo(sx,sy);started=true;}else ctx.lineTo(sx,sy);}
+    ctx.stroke();
+  }
+  function drawCurveCore(){
+    const N=460,loop=[];
+    for(let i=0;i<=N;i++)loop.push(pt(i/N));
+    for(let i=N;i>=0;i--){const[x,y]=pt(i/N);loop.push([y,x]);}
+    const M=900,brA=[],brB=[];
+    for(let i=0;i<=M;i++)brA.push(pt(-1+1e-4*Math.pow(1e4,i/M)));
+    for(let i=0;i<=M;i++)brB.push(pt(-1-1e-4*Math.pow(1e6,i/M)));
+    strokePoly(brA,C('--cinnabar'),2.2);
+    strokePoly(brB,C('--cinnabar'),2.2);
+    strokePoly(loop,C('--cinnabar'),2.7);
+  }
+  function drawVertexNode(){
+    const v=[1.5*a,1.5*a];
+    ctx.fillStyle=C('--gold'); dot(v,5); ctx.fillStyle=C('--paper-2'); dot(v,2);
+    ctx.strokeStyle=C('--teal'); ctx.lineWidth=2; ring([0,0],5);
+  }
+
+  // ① 曲線分頁
+  function drawCurveExtras(){
+    if(show.mark) drawVertexNode();
+    if(curveTan){
+      const t=Math.tan(phiC), P=pt(t), m=slopeT(t);
+      ctx.strokeStyle=C('--cinnabar');ctx.lineWidth=2.4;ctx.setLineDash([]); lineSlope(P[0],P[1],m);
+      ctx.fillStyle=C('--gold'); dot(P,6); ctx.strokeStyle=C('--paper-2');ctx.lineWidth=2;ring(P,6);
+    }
+  }
+
+  // ② 法圓法
+  function drawDesc(){
+    drawVertexNode();
+    const P=[1.5*a,1.5*a], Cc=[descV,0];
+    const Rr=Math.hypot(P[0]-Cc[0],P[1]-Cc[1]);
+    // 圓
+    ctx.strokeStyle=C('--teal');ctx.lineWidth=1.8;ctx.setLineDash([]);
+    const sc=W2S(Cc[0],Cc[1]); ctx.beginPath();ctx.arc(sc[0],sc[1],Rr*unit,0,7);ctx.stroke();
+    // 半徑
+    ctx.strokeStyle=C('--gold');ctx.lineWidth=2; line(Cc,P);
+    ctx.fillStyle=C('--teal'); dot(Cc,4);
+    // 條件
+    const tol=0.05*Math.max(0.3,Math.abs(a));
+    const tangent=Math.abs(descV)<tol;
+    const rdx=P[0]-Cc[0], rdy=P[1]-Cc[1];
+    // 候選切線（半徑的垂直方向）
+    const pdx=-rdy,pdy=rdx,nn=Math.hypot(pdx,pdy),ux=pdx/nn,uy=pdy/nn,L=R*2;
+    ctx.strokeStyle=tangent?C('--cinnabar'):'rgba(93,107,111,.75)';
+    ctx.setLineDash(tangent?[]:[5,5]); ctx.lineWidth=tangent?2.6:1.5;
+    line([P[0]-ux*L,P[1]-uy*L],[P[0]+ux*L,P[1]+uy*L]); ctx.setLineDash([]);
+    // 切點
+    ctx.fillStyle=C('--cinnabar'); dot(P,5);
+    if(tangent){ ctx.fillStyle=C('--paper-2'); dot(P,2); }
+  }
+
+  // ③ 擬等法
+  function drawFermat(){
+    const t=Math.tan(phiF), P=pt(t), x0=P[0],y0=P[1], m=slopeT(t);
+    // 切線
+    ctx.strokeStyle=C('--cinnabar');ctx.lineWidth=2.2;ctx.setLineDash([]); lineSlope(x0,y0,m);
+    // 副切線三角形
+    if(fermSub){
+      const A=[x0,0];
+      let T=null; if(isFinite(m)&&Math.abs(m)>1e-6) T=[x0-y0/m,0];
+      if(T){ ctx.fillStyle='rgba(168,132,44,.12)'; tri(T,A,P);
+        ctx.strokeStyle=C('--gold');ctx.lineWidth=3.5; line(T,A); }
+      ctx.strokeStyle='rgba(43,36,24,.5)';ctx.setLineDash([3,3]);ctx.lineWidth=1.2; line(A,P); ctx.setLineDash([]);
+      ctx.fillStyle=C('--ink'); dot(A,3.5); if(T) dot(T,3.5);
+    }
+    // 鄰點 P' 與割線
+    const h=Math.pow(10,fermLogH); const t2=t+h, P2=pt(t2);
+    ctx.strokeStyle=C('--teal');ctx.setLineDash([6,5]);ctx.lineWidth=1.9; line(P,P2); ctx.setLineDash([]);
+    ctx.fillStyle=C('--teal'); dot(P2,4.5);
+    // P
+    ctx.fillStyle=C('--cinnabar'); dot(P,6); ctx.strokeStyle=C('--paper-2');ctx.lineWidth=2; ring(P,6);
+  }
+
+  // 讀數
+  function f2(v){return (Math.round(v*100)/100).toFixed(2);}
+  function signTerm(v){ const x=Math.round(v*100)/100; if(x===0)return ''; return (x>0?' + '+f2(x):' − '+f2(-x)); }
+  function updateReadout(){
+    $('aVal').textContent=a.toFixed(2);
+    $('aNote').textContent=(Math.abs(a)<1e-9)?'a ≠ 0：退化為一點':'';
+    if(mode==='curve'){
+      const t=Math.tan(phiC),P=pt(t),m=slopeT(t);
+      $('cP').textContent=`(${f2(P[0])}, ${f2(P[1])})`;
+      if(!isFinite(m)||Math.abs(m)>1e4){ $('cM').textContent='∞（垂直）'; $('cEq').textContent=`x = ${f2(P[0])}`; }
+      else { $('cM').textContent=f2(m); const b=P[1]-m*P[0];
+        $('cEq').textContent=`y = ${f2(m)}x${signTerm(b)}`; }
+    } else if(mode==='desc'){
+      const P=[1.5*a,1.5*a];
+      $('dP').textContent=`(${f2(P[0])}, ${f2(P[1])})`;
+      const rdx=P[0]-descV, rdy=P[1]-0; const rs=rdx!==0?rdy/rdx:Infinity;
+      $('dRs').textContent=isFinite(rs)?f2(rs):'∞';
+      const tol=0.05*Math.max(0.3,Math.abs(a)); const tangent=Math.abs(descV)<tol;
+      const st=$('descStatus');
+      if(tangent){ st.className='status ok'; st.textContent='✓ 相切！重根 x = b（圓與葉圈僅一交點）';
+        $('dCond').textContent='✓ 半徑斜率 = +1，⟂ 切線';
+        $('dTan').textContent=`y = −x${signTerm(3*a)}`; }
+      else { st.className='status no'; st.textContent='割線：圓穿過曲線（兩交點）';
+        $('dCond').textContent='需斜率 = +1（拖向 v=0）'; $('dTan').textContent='—'; }
+    } else {
+      const t=Math.tan(phiF),P=pt(t),x0=P[0],y0=P[1],m=slopeT(t);
+      const h=Math.pow(10,fermLogH),t2=t+h,P2=pt(t2);
+      const e=P2[0]-x0, sec=(P2[1]-y0)/(P2[0]-x0);
+      $('fE').textContent=f2(e);
+      $('fSec').textContent=isFinite(sec)?f2(sec):'∞';
+      $('fTan').textContent=(!isFinite(m)||Math.abs(m)>1e4)?'∞':f2(m);
+      const sub=(isFinite(m)&&Math.abs(m)>1e-6)?y0/m:Infinity;
+      $('fSub').textContent=isFinite(sub)?f2(sub):'∞';
+    }
+  }
+
+  // 最近曲線點（葉圈，回傳 phi）
+  function nearestPhi(wx,wy){
+    let best=0.785,bd=1e18;
+    for(let i=0;i<=600;i++){const ph=0.02+(1.54-0.02)*i/600;const t=Math.tan(ph);const P=pt(t);
+      const d=(P[0]-wx)**2+(P[1]-wy)**2; if(d<bd){bd=d;best=ph;}}
+    return best;
+  }
+
+  // 指標互動（拖曳）
+  let dragging=false;
+  function pointerWorld(e){const r=cv.getBoundingClientRect();const px=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+    const py=(e.touches?e.touches[0].clientY:e.clientY)-r.top; return S2W(px,py);}
+  function handleDrag(e){
+    const [wx,wy]=pointerWorld(e);
+    if(mode==='curve'){ if(!curveTan)return; phiC=nearestPhi(wx,wy); $('phiC').value=phiC; }
+    else if(mode==='desc'){ descV=Math.max(-2.5,Math.min(4,wx)); $('descV').value=descV; }
+    else { phiF=Math.max(0.18,Math.min(1.45,nearestPhi(wx,wy))); $('phiF').value=phiF; }
+    draw();
+  }
+  cv.addEventListener('pointerdown',e=>{dragging=true;cv.setPointerCapture(e.pointerId);handleDrag(e);});
+  cv.addEventListener('pointermove',e=>{if(dragging)handleDrag(e);});
+  cv.addEventListener('pointerup',()=>dragging=false);
+  cv.addEventListener('pointercancel',()=>dragging=false);
+
+  // 分頁切換
+  function setTab(name){
+    mode = name==='desc'?'desc':(name==='fermat'?'fermat':'curve');
+    document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
+    $('ctrl-curve').classList.toggle('hidden',name!=='curve');
+    $('ctrl-desc').classList.toggle('hidden',name!=='desc');
+    $('ctrl-fermat').classList.toggle('hidden',name!=='fermat');
+    $('theory-curve').classList.toggle('hidden',name!=='curve');
+    $('theory-desc').classList.toggle('hidden',name!=='desc');
+    $('theory-fermat').classList.toggle('hidden',name!=='fermat');
+    const hints={curve:'拖曳金點移動切點',desc:'左右拖曳改變圓心 v',fermat:'拖曳紅點移動切點 P'};
+    $('hint').textContent=hints[name];
+    stopAnims(); draw();
+  }
+  document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+
+  // 動畫
+  function stopAnims(){descAnim=false;fermAnim=false;descT0=0;if(raf){cancelAnimationFrame(raf);raf=null;}}
+  function animDesc(ts){ if(!descAnim)return;
+    if(!descT0){descT0=ts;descStartV=descV;}
+    let p=(ts-descT0)/3000; if(p>=1){p=1;descAnim=false;}
+    const e=p<0.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;  // easeInOutCubic
+    descV=descStartV*(1-e); $('descV').value=descV; draw();
+    if(descAnim) raf=requestAnimationFrame(animDesc); }
+  function animFerm(){ if(!fermAnim)return; fermLogH-=0.022; if(fermLogH<=-2.4){fermLogH=-2.4;fermAnim=false;}
+    $('fermH').value=fermLogH; draw(); if(fermAnim) raf=requestAnimationFrame(animFerm); }
+
+  // 事件
+  $('aSlider').addEventListener('input',e=>{a=parseFloat(e.target.value);draw();});
+  // ①
+  $('tTan').addEventListener('change',e=>{curveTan=e.target.checked;draw();});
+  $('phiC').addEventListener('input',e=>{phiC=parseFloat(e.target.value);draw();});
+  $('tAsym').addEventListener('change',e=>{show.asym=e.target.checked;draw();});
+  $('tMark').addEventListener('change',e=>{show.mark=e.target.checked;draw();});
+  $('tGrid').addEventListener('change',e=>{show.grid=e.target.checked;draw();});
+  document.querySelectorAll('#segScale button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#segScale button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); scaleMode=b.dataset.mode; draw();}));
+  // ②
+  $('descV').addEventListener('input',e=>{stopAnims();descV=parseFloat(e.target.value);draw();});
+  $('dSolve').addEventListener('click',()=>{stopAnims();if(Math.abs(descV)<0.1){descV=1.5;$('descV').value=1.5;}descT0=0;descAnim=true;raf=requestAnimationFrame(animDesc);});
+  $('dReset').addEventListener('click',()=>{stopAnims();descV=1.5;$('descV').value=1.5;draw();});
+  // ③
+  $('phiF').addEventListener('input',e=>{phiF=parseFloat(e.target.value);draw();});
+  $('fermH').addEventListener('input',e=>{stopAnims();fermLogH=parseFloat(e.target.value);draw();});
+  $('tSub').addEventListener('change',e=>{fermSub=e.target.checked;draw();});
+  $('fSolve').addEventListener('click',()=>{stopAnims();fermLogH=0;$('fermH').value=0;fermAnim=true;raf=requestAnimationFrame(animFerm);});
+  $('fReset').addEventListener('click',()=>{stopAnims();fermLogH=-0.5;$('fermH').value=-0.5;draw();});
+
+  window.addEventListener('resize',resize);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(resize);
+
+  resize();
+})();
+</script>
+</body>
+</html>
